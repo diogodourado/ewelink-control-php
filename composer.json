@@ -1,0 +1,23 @@
+{
+  "name": "diogodourado/ewelink-control-php",
+  "description": "SDK PHP para integrar e controlar dispositivos eWeLink (OAuth2, listar dispositivos, ligar/desligar).",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Diogodourado\\Ewelink\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=8.0",
+    "ext-json": "*",
+    "ext-hash": "*",
+    "ext-curl": "*"
+  },
+  "authors": [
+    {
+      "name": "Diogo Dourado",
+      "email": "diogo@dourado.net"
+    }
+  ]
+}
