@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Diogodourado\Ewelink;
@@ -14,7 +15,8 @@ final class TokenManager
         if ($this->tokensFile === '') {
             throw new \InvalidArgumentException('Config tokensFile é obrigatório.');
         }
-        $this->client     = $client;
+
+        $this->client = $client;
     }
 
     public function withAccessToken(callable $fn): array
@@ -28,10 +30,26 @@ final class TokenManager
             return $resp;
         }
 
-        $new = $this->client->refreshToken((string)$tokens['refreshToken'], (string)$tokens['region']);
+        $this->refreshTokens();
+
+        $tokens = $this->loadTokens();
+        $this->client->setRegion((string)$tokens['region']);
+
+        return $fn((string)$tokens['accessToken']);
+    }
+
+    public function refreshTokens(): array
+    {
+        $tokens = $this->loadTokens();
+
+        $this->client->setRegion((string)$tokens['region']);
+        $new = $this->client->refreshToken(
+            (string)$tokens['refreshToken'],
+            (string)$tokens['region']
+        );
 
         if (($new['httpCode'] ?? 0) !== 200 || empty($new['json']['data'])) {
-            return $resp;
+            return $new;
         }
 
         $data = $new['json']['data'];
@@ -43,8 +61,7 @@ final class TokenManager
 
         $this->saveTokens($tokens);
 
-        $this->client->setRegion((string)$tokens['region']);
-        return $fn((string)$tokens['accessToken']);
+        return $new;
     }
 
     private function loadTokens(): array
@@ -56,7 +73,12 @@ final class TokenManager
         $json = file_get_contents($this->tokensFile);
         $tokens = json_decode((string)$json, true);
 
-        if (!is_array($tokens) || empty($tokens['accessToken']) || empty($tokens['refreshToken']) || empty($tokens['region'])) {
+        if (
+            !is_array($tokens) ||
+            empty($tokens['accessToken']) ||
+            empty($tokens['refreshToken']) ||
+            empty($tokens['region'])
+        ) {
             throw new \RuntimeException('Conteúdo de tokens inválido em ' . $this->tokensFile);
         }
 
@@ -65,7 +87,11 @@ final class TokenManager
 
     private function saveTokens(array $tokens): void
     {
-        $json = json_encode($tokens, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $json = json_encode(
+            $tokens,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+
         file_put_contents($this->tokensFile, (string)$json);
     }
 
